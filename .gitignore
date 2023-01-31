@@ -1,2 +1,6 @@
 .*
 !.gitignore
+gscraper/logfile
+*.sqlite3
+__pycache__
+*.pyc
