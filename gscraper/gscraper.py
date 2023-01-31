@@ -34,75 +34,80 @@ def summarise_citation_data(cit_data, start_year, end_year):
 		) + tuple((cit_counts[y] for y in range(start_year, end_year + 1)))
 
 
-params = {
-	"engine": "google_scholar",
-	"api_key": "",
-	"hl": "en",
-}
+def main():
+	params = {
+		"engine": "google_scholar",
+		"api_key": "",
+		"hl": "en",
+	}
 
-pubs = (
-	("eggnog", 11926277896809258613, 2019),
-	("eggnog", 10735210926890364446, 2017),
-	("eggnog", 9989213968742927327, 2021),
-	("eggnog", 10735210926890364446, 2017),
-	("eggnog", 16178506737030708895, 2016),
-	("eggnog", 11212564900201235579, 2012),
-	("eggnog", 13237168627628146129, 2007),
-	("eggnog", 13994930980074868413, 2014),
-	("eggnog", 2416447087782313418, 2010),
-)
+	pubs = (
+		("eggnog", 11926277896809258613, 2019),
+		("eggnog", 10735210926890364446, 2017),
+		("eggnog", 9989213968742927327, 2021),
+		("eggnog", 10735210926890364446, 2017),
+		("eggnog", 16178506737030708895, 2016),
+		("eggnog", 11212564900201235579, 2012),
+		("eggnog", 13237168627628146129, 2007),
+		("eggnog", 13994930980074868413, 2014),
+		("eggnog", 2416447087782313418, 2010),
+	)
 
-years = (2019, 2022)
+	years = (2019, 2022)
 
-cit_counts = {}
+	cit_counts = {}
 
-for tool, cites_id, pub_year in pubs:
-	cit_counts.setdefault(tool, {}).setdefault(cites_id, {})["publication_year"] = pub_year
+	for tool, cites_id, pub_year in pubs:
+		cit_counts.setdefault(tool, {}).setdefault(cites_id, {})["publication_year"] = pub_year
 
-	params["cites"] = str(cites_id)
+		params["cites"] = str(cites_id)
 
-	start_year = max(years[0], pub_year)
-	years_to_poll = tuple(range(start_year, years[1] + 1))
+		start_year = max(years[0], pub_year)
+		years_to_poll = tuple(range(start_year, years[1] + 1))
 
-	# grab citations < years[0]
-	if pub_year < start_year:
-		try:
-			del params["as_ylo"]
-		except KeyError:
-			pass
-		params["as_yhi"] = str(start_year - 1)
-		resp = make_request(params)
-		print(resp["search_information"])
-		print(resp["search_parameters"])
-		cit_counts.setdefault(tool, {}).setdefault(cites_id, {}).setdefault("annual_citations", {})[start_year - 1] = resp["search_information"]["total_results"]		
+		# grab citations < years[0]
+		if pub_year < start_year:
+			try:
+				del params["as_ylo"]
+			except KeyError:
+				pass
+			params["as_yhi"] = str(start_year - 1)
+			resp = make_request(params)
+			print(resp["search_information"])
+			print(resp["search_parameters"])
+			cit_counts.setdefault(tool, {}).setdefault(cites_id, {}).setdefault("annual_citations", {})[start_year - 1] = resp["search_information"]["total_results"]		
 
-	for year in years_to_poll:
-		params["as_yhi"] = params["as_ylo"] = str(year)
-		resp = make_request(params)
-		print(resp["search_information"])
-		print(resp["search_parameters"])
-		cit_counts.setdefault(tool, {}).setdefault(cites_id, {}).setdefault("annual_citations", {})[year] = resp["search_information"]["total_results"]
+		for year in years_to_poll:
+			params["as_yhi"] = params["as_ylo"] = str(year)
+			resp = make_request(params)
+			print(resp["search_information"])
+			print(resp["search_parameters"])
+			cit_counts.setdefault(tool, {}).setdefault(cites_id, {}).setdefault("annual_citations", {})[year] = resp["search_information"]["total_results"]
+
+		#break
+
+	with open(f"{tool}.json", "wt") as _out:
+		json.dump(cit_counts, _out)
+
+
+	header = ["tool", "first_pub", "n_pubs", f"<{start_year}", *(str(y) for y in range(years[0], years[1] + 1))]
+	print(*header, sep="\t")
+	for record in summarise_citation_data(cit_counts, *years):
+		print(*record, sep="\t")
+
 
 	#break
 
-with open(f"{tool}.json", "wt") as _out:
-	json.dump(cit_counts, _out)
-
-
-header = ["tool", "first_pub", "n_pubs", f"<{start_year}", *(str(y) for y in range(years[0], years[1] + 1))]
-print(*header, sep="\t")
-for record in summarise_citation_data(cit_counts, *years):
-	print(*record, sep="\t")
-
-
-#break
 
 
 
+	#curl --get https://serpapi.com/search \
+	# -d engine="google_scholar" \
+	#-d cites="13457976773250883046" \
+	#-d api_key="" \
+	#-o test_string.json \
+	#-d num="10000"
 
-#curl --get https://serpapi.com/search \
-# -d engine="google_scholar" \
-#-d cites="13457976773250883046" \
-#-d api_key="" \
-#-o test_string.json \
-#-d num="10000"
+
+if __name__ == "__main__":
+	main()
