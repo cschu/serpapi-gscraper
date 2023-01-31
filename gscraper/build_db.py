@@ -39,7 +39,7 @@ def main():
 			if article is None:
 				article = Article(
 					cites_id=dc_article.cites_id,
-					year=dc_article.publication_year,
+					publication_year=dc_article.publication_year,
 					service_id=service.id,
 					service_version=dc_article.version,
 					url=dc_article.article_url,
